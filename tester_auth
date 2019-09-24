@@ -1,0 +1,2 @@
+curl -v -S -H "Content-Type: application/json" --request POST --data '{"token": "efa87bde-aa9d-4c2f-af5a-a488bda578"}' http://127.0.0.1:8080/login
+curl -S -H "Content-Type: application/json" --request POST --data '{"team_name":"Ave M", "email":"mrben838@gmail.com","country": "RU", "university": "PGU"}' http://127.0.0.1:8080/register

@@ -1,0 +1,12 @@
+[server]
+url = "127.0.0.1:8080"
+
+[log]
+rptime = "debug"
+actix-web = "debug"
+
+[database]
+host = "127.0.0.1"
+username = "postgres"
+password = "qwerty"
+database = "ctf"
