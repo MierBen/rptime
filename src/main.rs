@@ -2,6 +2,7 @@ use std::env::set_var;
 use failure::Fallible;
 use rptime_backend::{Server, Config};
 use clap::App;
+use log::info;
 
 fn main() -> Fallible<()> {
 
@@ -12,7 +13,10 @@ fn main() -> Fallible<()> {
     let config = Config::from_file(config_file)?;
 
     set_var("RUST_LOG",
-    format!("actix_web={}, rptime={}", config.log.actix_web, config.log.rptime));
+    format!(
+        "actix_web={},rptime={}",
+        config.log.actix_web, config.log.rptime
+    ));
 
     env_logger::init();
 

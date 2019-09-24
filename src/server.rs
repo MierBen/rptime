@@ -21,7 +21,7 @@ fn register(
     data: web::Json<Register>,
     pool: web::Data<Pool>
 ) -> impl Future<Item=HttpResponse, Error=Error> {
-    debug!("Got team_name: {}\nemail: {}\ncountry: {}",
+    debug!("Got team_name: {}; email: {}; country: {}",
            data.team_name, data.email, data.country);
 
     web::block(move || register_query(data.into_inner(), pool))
@@ -46,10 +46,12 @@ fn login(
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     debug!("Got token: {}",
            data.token);
+
     web::block(move || login_query(data.into_inner(), pool))
-        .then(|res| match res {
+        .then(move |res| match res {
             Ok(team) => {
-//                    id.remember(team.id.clone().to_string());
+                let team_id = team.id.to_string().to_owned();
+                id.remember(team_id);
                 Ok(HttpResponse::Ok()
                     .content_type("application/json")
                     .json("Success"))
@@ -102,17 +104,20 @@ impl Server {
                 ))
                 .wrap(middleware::Logger::default())
                 .service(
-                    web::resource("/register")
-                        .route(web::post().to_async(register))
-                )
-                .service(
-                    web::resource("/login")
-                        .route(web::post().to_async(login))
-                )
-                .service(
-                    web::resource("/logout")
-                        .route(web::post().to_async(logout))
-                )
+                    web::scope("/api/v1/")
+                    .service(
+                        web::resource("/register")
+                            .route(web::post().to_async(register))
+                    )
+                    .service(
+                        web::resource("/login")
+                            .route(web::post().to_async(login))
+                    )
+                    .service(
+                        web::resource("/logout")
+                            .route(web::post().to_async(logout))
+                    )
+            )
         });
 
         let url = config.server.url.clone();

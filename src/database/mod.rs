@@ -2,10 +2,9 @@ use diesel::{prelude::*, r2d2::{self, ConnectionManager}, PgConnection, RunQuery
 use crate::models::models::{Register, Login, Team, NewTeam };
 use uuid::Uuid;
 use actix_web::web::Data;
+use regex::Regex;
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-pub struct DatabaseExecutor(pub Pool);
 
 pub fn register_query(
     data: Register,
@@ -15,8 +14,15 @@ pub fn register_query(
 
     let conn = &pool.get().unwrap();
 
-    let tok = &Uuid::new_v4().to_string();
+    lazy_static! {
+        static ref MAIL: Regex = Regex::new(r"\w+@\w+\.\w+").unwrap();
+    }
 
+    if MAIL.is_match(&data.email) {
+        return Err(diesel::result::Error::AlreadyInTransaction); //Изменить
+    }
+
+    let tok = &Uuid::new_v4().to_string();
 
     let team = NewTeam {
         name: &data.team_name,
@@ -26,15 +32,15 @@ pub fn register_query(
         token: tok,
     };
 
-    debug!("For team {} created token: {}",
-       team.name,
-       team.token,
-    );
-
     let check_exist = team_info
         .filter(name.eq(&team.name))
         .or_filter(email.eq(&team.email))
         .first::<Team>(conn);
+
+    debug!("For team {} created token: {}",
+           team.name,
+           team.token,
+    );
 
     if let Err(diesel::NotFound) = check_exist {
         diesel::insert_into(team_info)
