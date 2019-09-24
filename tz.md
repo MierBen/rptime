@@ -16,6 +16,7 @@ Backend->Frontend
 
 ### Аутентификация
 Frontend->Backend
+ - team_name
  - token
  - Captcha
 
@@ -130,4 +131,7 @@ Frontend
  - keys_condition
  - coords
 
-
+### Таблица game
+ - start_time
+ - stop_time
+ 
