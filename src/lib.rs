@@ -4,9 +4,10 @@
 
 
 pub mod server;
-pub mod config;
+pub mod utils;
 mod database;
 mod models;
+mod api;
 
 pub use server::Server;
-pub use config::Config;
+pub use utils::Config;

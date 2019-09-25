@@ -1,10 +1,13 @@
-use actix::{SystemRunner};
-use actix_web::{middleware, web, HttpServer, HttpResponse, Error, App};
+use actix::SystemRunner;
+use actix_web::{middleware, web, HttpServer, HttpResponse, Error, App, ResponseError};
 use actix_identity::{CookieIdentityPolicy, Identity, IdentityService};
-use futures::{Future, future::ok as fut_ok};
+use futures::{Future, future::{ok as fut_ok, err as fut_err}};
 use failure::Fallible;
 use crate::{
-    config::Config,
+    utils::{
+        Config,
+        AuthError
+    },
     database::{
         Pool,
         init_db,
@@ -25,17 +28,16 @@ fn register(
            data.team_name, data.email, data.country);
 
     web::block(move || register_query(data.into_inner(), pool))
+        .from_err::<AuthError>()
         .then(|res | match res {
             Ok(team) => {
                 Ok(HttpResponse::Ok()
                     .content_type("application/json")
                     .json(team))
             },
-            Err(_) => {
-                Ok(HttpResponse::BadRequest()
-                    .content_type("application/json")
-                    .json("Team already exist"))
-            }
+            Err(err) => {
+                Ok(err.error_response())
+            },
         })
 }
 
@@ -48,16 +50,17 @@ fn login(
            data.token);
 
     web::block(move || login_query(data.into_inner(), pool))
+        .from_err::<AuthError>()
         .then(move |res| match res {
             Ok(team) => {
                 let team_id = team.id.to_string().to_owned();
                 id.remember(team_id);
                 Ok(HttpResponse::Ok()
                     .content_type("application/json")
-                    .json("Success"))
+                    .json(team))
             },
-            Err(_) => {
-                Ok(HttpResponse::NotFound().finish())
+            Err(err) => {
+                Ok(err.error_response())
             }
         })
 }

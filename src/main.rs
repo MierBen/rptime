@@ -6,7 +6,7 @@ use log::info;
 
 fn main() -> Fallible<()> {
 
-    App::new("RpTime config");
+    App::new("RpTime");
 
     let config_file = "Config.toml";
 
