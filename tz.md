@@ -30,8 +30,11 @@ Backend->Frontend
 
 ### Карта
 На карте располагаются точки с тасками
+
 При наведении на точку повляются окна с краткой инфой о таске
+
 Окна с краткой инфой о таске подгружаются сразу
+
 ##### Окно с краткой инфой о таске
  - task_name
  - points
@@ -108,48 +111,83 @@ Frontend
 
 ### Регистрация
 `/register`
+
 Frontend->Backend
+
 `{email;
+
 team_name;
+
 country;
+
 university}`
+
 Backend->Frontend
+
 `{reg_result}`
 
 ### Аутентификация
+
 `/login`
+
 Frontend->Backend
+
 `{team_name; auth_token}`
+
 Backend->Frontend
+
 `{auth_result; team_id}`
 
 ### Карта
+
 `/map`
+
 Frontend->Backend
+
 `{team_id}`
+
 Backend->Frontend
+
 Для каждого таска:
+
 `{task_id; task_name; points; keys_reward; keys_condition; tags}`
+
 ##### Кнопка «Открыть описание»
+
 `/task_id/description`
+
 Frontend->Backend
+
 `{task_id}`
+
 Backend->Frontend
+
 Для каждого таска:
+
 `{task_name; points; keys_reward; keys_condition; tags; description; picture}`
 
 ##### Кнопка «Отправить»
+
 `/flag`
+
 Frontend->Backend
+
 `{task_id; flag; team_id}`
+
 Backend->Frontend
+
 `{flag_result}`
 
 ##### Кнопка «Dream Team»
+
 `/team`
+
 Frontend->Backend
+
 `{team id}`
+
 Backend->Frontend
+
 `{team_name; team_avatar; keys_owned}`
 
 ##### Кнопка «Скорборд»
