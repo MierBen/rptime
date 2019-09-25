@@ -114,13 +114,7 @@ Frontend
 
 Frontend->Backend
 
-`{email;
-
-team_name;
-
-country;
-
-university}`
+`{email; team_name; country; university}`
 
 Backend->Frontend
 
