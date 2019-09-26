@@ -1,79 +1,24 @@
 use actix::SystemRunner;
-use actix_web::{middleware, web, HttpServer, HttpResponse, Error, App, ResponseError};
-use actix_identity::{CookieIdentityPolicy, Identity, IdentityService};
-use futures::{Future, future::{ok as fut_ok, err as fut_err}};
+use actix_web::{middleware, guard, web, HttpServer, App};
+use actix_identity::{CookieIdentityPolicy, IdentityService};
 use failure::Fallible;
 use crate::{
     utils::{
         Config,
-        AuthError
     },
-    database::{
-        Pool,
-        init_db,
-        login_query,
-        register_query,
+    database::init_db,
+    api::{
+        auth::{
+            login,
+            logout,
+            register,
+        },
+        game::{
+            index,
+        }
     },
-    models::{
-        Login,
-        Register
-    }
+    middleware::CheckLogin,
 };
-
-fn register(
-    data: web::Json<Register>,
-    pool: web::Data<Pool>
-) -> impl Future<Item=HttpResponse, Error=Error> {
-    debug!("Got team_name: {}; email: {}; country: {}",
-           data.team_name, data.email, data.country);
-
-    web::block(move || register_query(data.into_inner(), pool))
-        .from_err::<AuthError>()
-        .then(|res | match res {
-            Ok(team) => {
-                Ok(HttpResponse::Ok()
-                    .content_type("application/json")
-                    .json(team))
-            },
-            Err(err) => {
-                Ok(err.error_response())
-            },
-        })
-}
-
-fn login(
-    data: web::Json<Login>,
-    id: Identity,
-    pool: web::Data<Pool>
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    debug!("Got token: {}",
-           data.token);
-
-    web::block(move || login_query(data.into_inner(), pool))
-        .from_err::<AuthError>()
-        .then(move |res| match res {
-            Ok(team) => {
-                let team_id = team.id.to_string().to_owned();
-                id.remember(team_id);
-                Ok(HttpResponse::Ok()
-                    .content_type("application/json")
-                    .json(team))
-            },
-            Err(err) => {
-                Ok(err.error_response())
-            }
-        })
-}
-
-fn logout(id: Identity) -> impl Future<Item = HttpResponse, Error = Error> {
-
-    if let Some(_token) = id.identity() {
-        id.forget();
-    }
-    fut_ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .json("Success"))
-}
 
 
 pub struct Server {
@@ -108,18 +53,24 @@ impl Server {
                 .wrap(middleware::Logger::default())
                 .service(
                     web::scope("/api/v1/")
-                    .service(
-                        web::resource("/register")
-                            .route(web::post().to_async(register))
-                    )
-                    .service(
-                        web::resource("/login")
-                            .route(web::post().to_async(login))
-                    )
-                    .service(
-                        web::resource("/logout")
-                            .route(web::post().to_async(logout))
-                    )
+                        .guard(guard::Header("content-type", "application/json"))
+                        .service(
+                            web::resource("/register")
+                                .route(web::post().to_async(register))
+                        )
+                        .service(
+                            web::resource("/login")
+                                .route(web::post().to_async(login))
+                        )
+                        .service(
+                            web::resource("/logout")
+                                .route(web::post().to_async(logout))
+                        )
+                        .service(
+                            web::resource("/map")
+                                .wrap(CheckLogin)
+                                .route(web::get().to_async(index))
+                        )
             )
         });
 
