@@ -16,7 +16,7 @@
     1. Установить переменную окружения _DATABASE_URL_:  
         Пример: `DATABASE_URL=postgres://username:password@{host}/{database}`
     2. В папке проекта выполнить команду:  
-    `diesel migrations run`
+    `diesel migration run`
         
 2. Запуск билда:
     1. Перейти в папку проекта;
