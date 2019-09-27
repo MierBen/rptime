@@ -5,7 +5,13 @@ use regex::Regex;
 
 use crate::{
     models::{Register, Login, Team, NewTeam },
-    utils::AuthError,
+    utils::{
+        AuthError,
+        AppError
+    },
+};
+use chrono::{
+    NaiveDateTime
 };
 
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
@@ -51,7 +57,7 @@ pub fn register_query(
         diesel::insert_into(team_info)
             .values(&team)
             .get_result::<Team>(conn)
-            .map_err(|err| AuthError::RegistrationError { reason: err })
+            .map_err(|err| AuthError::ServiceError { cause: err.to_string() })
     } else {
         Err(AuthError::TeamExist)
     }
@@ -71,10 +77,54 @@ pub fn login_query(
         .map_err(|err| if err == diesel::NotFound {
             AuthError::BadToken
         } else {
-            AuthError::RegistrationError { reason: err }
+            AuthError::ServiceError { cause: err.to_string() }
         })
 }
 
+pub fn init_game(
+    (start, end): (NaiveDateTime, NaiveDateTime),
+    pool: &Pool,
+) -> Result<(), AppError> {
+
+    use crate::models::schema::game::dsl::*;
+
+    let conn = &pool.get().unwrap();
+
+    let res = diesel::insert_into(game)
+        .values((&start_game.eq(start), &end_game.eq(end)))
+        .execute(conn);
+
+    match res {
+        Ok(_) => Ok(()),
+        Err(err) => Err(AppError::ServiceError { cause : err.to_string() })
+    }
+}
+
+pub fn check_game(
+    pool: Data<Pool>
+) -> Result<String, AppError> {
+
+    use crate::models::schema::game::dsl::*;
+
+    let conn = &pool.get().unwrap();
+
+    let (start_time, end_time) = game
+        .select((start_game, end_game))
+        .order(id.desc())
+        .first::<(NaiveDateTime, NaiveDateTime)>(conn)
+        .map_err(| err | AppError::ServiceError { cause: err.to_string() })?;
+
+    let now = chrono::Local::now()
+        .naive_local();
+
+    if now < start_time {
+        Err(AppError::GameNotStarted)
+    } else if now > end_time {
+        Err(AppError::GameOver)
+    } else {
+        Ok(String::from("Context running"))
+    }
+}
 
 pub fn init_db(database_url: String) -> Pool {
     let manager =

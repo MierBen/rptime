@@ -1,17 +1,10 @@
-use actix_web::{web, HttpResponse, Error, ResponseError};
+use actix_web::{ web, HttpResponse, Error };
 use actix_identity::Identity;
 use futures::{Future, future::{ok as fut_ok}};
 use crate::{
-    utils::{
-        AuthError
-    },
     database::{
         Pool,
     },
-//    models::{
-//        Login,
-//        Register
-//    }
 };
 
 

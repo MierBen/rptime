@@ -1,12 +1,16 @@
 use actix::SystemRunner;
 use actix_web::{middleware, guard, web, HttpServer, App};
 use actix_identity::{CookieIdentityPolicy, IdentityService};
+use chrono::NaiveDateTime;
 use failure::Fallible;
 use crate::{
     utils::{
         Config,
     },
-    database::init_db,
+    database::{
+        init_db,
+        init_game,
+    },
     api::{
         auth::{
             login,
@@ -17,7 +21,10 @@ use crate::{
             index,
         }
     },
-    middleware::CheckLogin,
+    middleware::{
+        CheckLogin,
+        CheckGame
+    },
 };
 
 
@@ -29,7 +36,7 @@ pub struct Server {
 
 impl Server {
     pub fn from_config(config: &Config) -> Fallible<Self> {
-        let runner = actix::System::new("rptime");
+        let runner = actix::System::new("rptime-backend");
 
         let database_url = format!(
             "postgres://{}:{}@{}/{}",
@@ -41,12 +48,23 @@ impl Server {
 
         let pool = init_db(database_url);
 
+        let start_game = NaiveDateTime::parse_from_str(
+            &config.game.start_game, "%Y-%m-%d %H:%M:%S").unwrap();
+        let end_game = NaiveDateTime::parse_from_str(
+            &config.game.end_game, "%Y-%m-%d %H:%M:%S").unwrap();
+
+        let _ = init_game(
+            (start_game, end_game), &pool
+        ).map_err(|err| panic!("Error while initializing game! Error: {:?}", err));
+
+        let secret_key = config.server.secret_key.clone();
+
         let server = HttpServer::new(move || {
             App::new()
                 .data(pool.clone())
                 .wrap(IdentityService::new(
                     CookieIdentityPolicy::new(
-                        "9bg1Ujcuz89wGCQTgBThiuJQzmEr7xIp".as_bytes()
+                        secret_key.as_bytes()
                     ).name("s")
                         .secure(false)
                 ))
@@ -56,18 +74,22 @@ impl Server {
                         .guard(guard::Header("content-type", "application/json"))
                         .service(
                             web::resource("/register")
+                                .wrap(CheckGame)
                                 .route(web::post().to_async(register))
                         )
                         .service(
                             web::resource("/login")
+                                .wrap(CheckGame)
                                 .route(web::post().to_async(login))
                         )
                         .service(
                             web::resource("/logout")
+                                .wrap(CheckGame)
                                 .route(web::post().to_async(logout))
                         )
                         .service(
                             web::resource("/map")
+                                .wrap(CheckGame)
                                 .wrap(CheckLogin)
                                 .route(web::get().to_async(index))
                         )

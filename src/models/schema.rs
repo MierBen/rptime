@@ -8,6 +8,14 @@ table! {
 }
 
 table! {
+    game (id) {
+        id -> Int4,
+        start_game -> Timestamp,
+        end_game -> Timestamp,
+    }
+}
+
+table! {
     tasks (id) {
         id -> Int4,
         task_name -> Varchar,
@@ -46,6 +54,7 @@ joinable!(team_game -> team_info (team_id));
 
 allow_tables_to_appear_in_same_query!(
     completed,
+    game,
     tasks,
     team_game,
     team_info,
