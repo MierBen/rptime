@@ -21,7 +21,7 @@
     1. Перейти в папку проекта
     2. Выполнить команду: `cargo build`
 
-3. Сформировать `Config.toml` по примеру
+3. Сформировать `Config.toml` по примеру `Config.toml.example`
 4. Запустить журейку одной из следующих команд:
     `/target/debug/rptime -c <path_to_config>`
     `/target/debug/rptime --config <path_to_config>`
