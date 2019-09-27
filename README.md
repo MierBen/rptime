@@ -14,7 +14,7 @@
 
 1. Конфигурация базы данных
     1. Установить переменную окружения _DATABASE_URL_:  
-        Пример: `DATABASE_URL=postgres://username:password@{host}/{database}`
+        Пример: `DATABASE_URL=postgres://{username}:{password}@{host}/{database}`
     2. В папке проекта выполнить команду:  
     `diesel migration run`
         
