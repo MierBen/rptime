@@ -1,5 +1,10 @@
 [server]
 url = "127.0.0.1:8080"
+secret-key = "9bg1Ujcuz89wGCQTgBThiuJQzmEr7xIp"
+
+[game]
+start-game = "2019-09-27 10:53:00"
+end-game = "2019-09-27 10:54:00"
 
 [log]
 rptime = "debug"
