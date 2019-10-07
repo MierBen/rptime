@@ -1,0 +1,11 @@
+template_version = '1.0'
+
+places = [{ id = 1, name = 'Farm', coords = [20, 54] },
+            { id = 2, name = 'Las Vegas Ruins', coords = [78, 30]}]
+
+keys = [{ id = 1, name = 'Lt. Joshi' },
+        { id = 2, name = 'K' }]
+
+characters = [{ id = 1, name = 'Lt. Joshi' },
+        { id = 2, name = 'K' },
+        { id = 3, name = 'Rick Deckard' }]
