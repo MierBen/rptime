@@ -63,7 +63,6 @@
 
 <script>
     import axios from 'axios'
-    import {AUTH_REQUEST} from '../store/actions/auth'
 
     export default {
         data() {
@@ -111,10 +110,18 @@
             },
 
             signIn() {
-                const { teamName, token } = this
-                this.$store.dispatch(AUTH_REQUEST, { teamName, token })
+                var team = JSON.stringify({
+                    team_name: this.teamName, 
+                    token: this.token,          
+                })
+                axios
+                    .post('api/v1/login', team, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
                     .then(() => {
-                        this.$router.push('map')
+                        this.$router.push('/')
                     })
                     .catch(error => {
                         console.log(error)
