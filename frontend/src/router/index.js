@@ -16,19 +16,22 @@ export default new Router({
             path: '/about',
             name: 'About',
             component: About,
+            children: [
+                { 
+                    path: '/register', 
+                    component: Register,
+                },
+                { 
+                    path: '/login', 
+                    component: Login,
+                }
+            ]
         },
         {
             path: '/',
             name: 'Map',
             component: TaskMap,
         },
-        { 
-            path: '/register', 
-            component: Register,
-        },
-        { 
-            path: '/login', 
-            component: Login,
-        }
+        
     ]
 })
