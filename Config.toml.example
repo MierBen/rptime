@@ -3,12 +3,16 @@ url = "127.0.0.1:8080"
 secret-key = "9bg1Ujcuz89wGCQTgBThiuJQzmEr7xIp"
 
 [game]
-start-game = "2019-09-27 10:53:00"
-end-game = "2019-09-27 10:54:00"
+start-game = "2019-10-16 14:42:00"
+end-game = "2019-10-20 14:45:00"
+path = "/mnt/e/rust/tasks"
+#if you have remote repo
+#url = "/path/to/repo"
 
 [log]
-rptime = "debug"
-actix-web = "debug"
+terminal = "DEBUG"
+file = "DEBUG"
+log-file = "/tmp/rptime.log"
 
 [database]
 host = "127.0.0.1"

@@ -1,16 +1,16 @@
 use actix_identity::RequestIdentity;
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
-use actix_web::{Error, HttpResponse, web, ResponseError};
-use futures::future::{ok, Either, FutureResult, Future};
+use actix_web::{web, Error, HttpResponse, ResponseError};
+use futures::future::{ok, Either, Future, FutureResult};
 use futures::Poll;
 
 use crate::database::check_game;
-use crate::utils::AppError;
+use crate::utils::{AppData, AppError, ResponseJsonError};
 
 pub struct CheckLogin;
 
-impl <S, B> Transform<S> for CheckLogin
+impl<S, B> Transform<S> for CheckLogin
 where
     S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -28,9 +28,8 @@ where
 }
 
 pub struct CheckLoginMiddleware<S> {
-    service: S
+    service: S,
 }
-
 
 impl<S, B> Service for CheckLoginMiddleware<S>
 where
@@ -55,8 +54,10 @@ where
             } else {
                 Either::B(ok(req.into_response(
                     HttpResponse::BadRequest()
-                        .json("error: You didn't login!")
-                        .into_body()
+                        .json(ResponseJsonError {
+                            error: "You didn't login!".to_string(),
+                        })
+                        .into_body(),
                 )))
             }
         }
@@ -65,10 +66,10 @@ where
 
 pub struct CheckGame;
 
-impl <S, B> Transform<S> for CheckGame
-    where
-        S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
-        S::Future: 'static,
+impl<S, B> Transform<S> for CheckGame
+where
+    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
 {
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
@@ -87,9 +88,9 @@ pub struct CheckGameMiddleware<S> {
 }
 
 impl<S, B> Service for CheckGameMiddleware<S>
-    where
-        S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
-        S::Future: 'static,
+where
+    S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
 {
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
@@ -101,48 +102,56 @@ impl<S, B> Service for CheckGameMiddleware<S>
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
+        let data = req.app_data::<AppData>().clone().unwrap();
 
-        let data = req.app_data().clone().unwrap();
+        let now = chrono::Local::now().naive_local();
 
-        let res = web::block( move || check_game(data))
-            .from_err::<AppError>()
-            .wait();
+        let mut start_game = *data.start_game.lock().unwrap();
+        let mut end_game = *data.end_game.lock().unwrap();
+
+        let res = if now < start_game {
+            Err(AppError::GameNotStarted)
+        } else if now > end_game {
+            web::block(move || check_game(&data.pool))
+                .from_err::<AppError>()
+                .then(|res| match res {
+                    Ok((start, end)) => {
+                        start_game = start;
+                        end_game = end;
+                        Ok(())
+                    }
+                    Err(err) => Err(err),
+                })
+                .wait()
+        } else {
+            Ok(())
+        };
 
         match res {
-             Ok(_res) => {
-                 if req.path() == "/api/v1/register" {
-                     Either::B(ok(req.into_response(
+            Ok(_res) => {
+                if req.path() == "/api/v1/register" {
+                    Either::B(ok(req.into_response(
                         HttpResponse::BadRequest()
                             .content_type("application/json")
-                            .json(r#"{"error": "Contest already running. You can't register"}"#)
-                            .into_body()
-                     )))
-                 } else {
-                     Either::A(self.service.call(req))
-                 }
-
-             },
-             Err(err) => {
-                 if req.path() == "/api/v1/register" {
-                     match err {
-                         AppError::GameNotStarted => Either::A(self.service.call(req)),
-                         _ =>   Either::B(
-                             ok(req.into_response(
-                                 err
-                                     .error_response()
-                                     .into_body())
-                             ))
-                     }
-
-                 } else {
-                     Either::B(
-                         ok(req.into_response(
-                             err
-                                 .error_response()
-                                 .into_body())
-                         ))
-                 }
-             }
-         }
+                            .json(ResponseJsonError {
+                                error: "Contest already running. You can't register".to_string(),
+                            })
+                            .into_body(),
+                    )))
+                } else {
+                    Either::A(self.service.call(req))
+                }
+            }
+            Err(err) => {
+                if req.path() == "/api/v1/register" {
+                    match err {
+                        AppError::GameNotStarted => Either::A(self.service.call(req)),
+                        _ => Either::B(ok(req.into_response(err.error_response().into_body()))),
+                    }
+                } else {
+                    Either::B(ok(req.into_response(err.error_response().into_body())))
+                }
+            }
+        }
     }
 }

@@ -1,8 +1,10 @@
 table! {
     completed (id) {
         id -> Int4,
-        team_id -> Nullable<Int4>,
-        task_id -> Nullable<Int4>,
+        team_id -> Int4,
+        task_id -> Int4,
+        flag -> Varchar,
+        solved -> Bool,
         time -> Timestamp,
     }
 }
@@ -18,21 +20,26 @@ table! {
 table! {
     tasks (id) {
         id -> Int4,
-        task_name -> Varchar,
-        description -> Varchar,
+        title_ru -> Varchar,
+        title_en -> Nullable<Varchar>,
+        description_ru -> Varchar,
+        description_en -> Nullable<Varchar>,
         flag -> Varchar,
-        points -> Varchar,
-        keys_reward -> Json,
-        keys_condition -> Json,
-        coords -> Json,
+        points -> Int4,
+        keys_reward -> Array<Int4>,
+        keys_condition -> Array<Int4>,
+        place -> Int4,
+        author -> Varchar,
+        character -> Int4,
+        tags -> Varchar,
     }
 }
 
 table! {
     team_game (id) {
         id -> Int4,
-        team_id -> Nullable<Int4>,
-        keys_owned -> Json,
+        team_id -> Int4,
+        keys_owned -> Array<Int4>,
         points -> Int4,
     }
 }
@@ -52,10 +59,4 @@ joinable!(completed -> tasks (task_id));
 joinable!(completed -> team_info (team_id));
 joinable!(team_game -> team_info (team_id));
 
-allow_tables_to_appear_in_same_query!(
-    completed,
-    game,
-    tasks,
-    team_game,
-    team_info,
-);
+allow_tables_to_appear_in_same_query!(completed, game, tasks, team_game, team_info,);

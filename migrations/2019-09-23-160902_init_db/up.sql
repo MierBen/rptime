@@ -9,25 +9,32 @@ CREATE TABLE team_info (
 
 CREATE TABLE tasks (
     id SERIAL PRIMARY KEY,
-    task_name VARCHAR NOT NULL,
-    description VARCHAR NOT NULL,
+    title_ru VARCHAR NOT NULL,
+    title_en VARCHAR,
+    description_ru VARCHAR NOT NULL,
+    description_en VARCHAR,
     flag VARCHAR NOT NULL,
-    points VARCHAR NOT NULL,
-    keys_reward json NOT NULL,
-    keys_condition json NOT NULL,
-    coords json NOT NULL
+    points INT NOT NULL,
+    keys_reward INTEGER [][] NOT NULL,
+    keys_condition INTEGER [][] NOT NULL,
+    place INT NOT NULL,
+    author VARCHAR NOT NULL,
+    character INT NOT NULL,
+    tags VARCHAR NOT NULL
 );
 
 CREATE TABLE team_game (
     id SERIAL PRIMARY KEY,
-    team_id INT REFERENCES team_info (id),
-    keys_owned json NOT NULL,
+    team_id INT REFERENCES team_info (id) NOT NULL,
+    keys_owned INTEGER [][] NOT NULL,
     points INT NOT NULL
 );
 
 CREATE TABLE completed (
     id SERIAL PRIMARY KEY,
-    team_id INT REFERENCES team_info (id),
-    task_id INT REFERENCES tasks (id),
+    team_id INT REFERENCES team_info (id) NOT NULL,
+    task_id INT REFERENCES tasks (id) NOT NULL,
+    flag VARCHAR NOT NULL,
+    solved BOOL NOT NULL,
     time TIMESTAMP NOT NULL
 );

@@ -1,7 +1,8 @@
+use failure::Fallible;
+use log::LevelFilter;
+use serde::Deserialize;
 use std::fs::read_to_string;
 use toml::from_str;
-use serde::Deserialize;
-use failure::Fallible;
 
 #[derive(Clone, Deserialize)]
 pub struct Config {
@@ -20,7 +21,6 @@ impl Config {
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct ServerConfig {
-
     pub url: String,
 
     pub secret_key: String,
@@ -29,19 +29,23 @@ pub struct ServerConfig {
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct GameConfig {
-
     pub start_game: String,
 
     pub end_game: String,
+
+    pub path: String,
+
+    pub url: Option<String>,
 }
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct LogConfig {
+    pub terminal: LevelFilter,
 
-    pub rptime: String,
+    pub file: LevelFilter,
 
-    pub actix_web: String,
+    pub log_file: String,
 }
 
 #[derive(Clone, Deserialize)]
