@@ -1,0 +1,29 @@
+template_version = '1.0'
+
+[title]
+ru = 'Бегущий по лезвию'
+#версии на английском может не быть, в этом случае en = ''
+en = 'Blade Runner'
+
+[flag]
+value = 'N3Xus_D4WN'
+is_regexp = false
+
+[position]
+#id места связано с координатами в /../map.toml
+place = 1 
+
+[reward]
+points = 200
+#keys = [ [key_id, key_level] ]
+#key_id связно с именем персонажа в /../map.toml
+keys = [ [1, 2], [2, 3] ]
+    
+[condition]
+keys = [ [1, 1], [2, 2] ]
+
+[etc]
+#id персонажа связано с именем в /../map.toml
+character = 3
+tags = 'admin forensics'
+author = 'Some Replicant'
