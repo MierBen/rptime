@@ -8,30 +8,6 @@ use regex::Regex;
 
 use super::Pool;
 
-pub fn check_game(pool: &Pool) -> Result<(NaiveDateTime, NaiveDateTime), AppError> {
-    use crate::models::schema::game::dsl::*;
-
-    let conn = &pool.get().unwrap();
-
-    let (start_time, end_time) = game
-        .select((start_game, end_game))
-        .order(id.desc())
-        .first::<(NaiveDateTime, NaiveDateTime)>(conn)
-        .map_err(|err| AppError::ServiceError {
-            cause: err.to_string(),
-        })?;
-
-    let now = chrono::Local::now().naive_local();
-
-    if now < start_time {
-        Err(AppError::GameNotStarted)
-    } else if now > end_time {
-        Err(AppError::GameOver)
-    } else {
-        Ok((start_time, end_time))
-    }
-}
-
 fn check_access(task_id: i32, team_id: i32, pool: &Pool) -> Result<(), AppError> {
     use crate::models::schema::{tasks, team_game};
 
@@ -241,10 +217,7 @@ pub fn load_map(team_id: i32, pool: &Pool) -> Result<Vec<TaskShortInfo>, AppErro
     let mut short_tasks: Vec<TaskShortInfo> = vec![];
 
     for task in loaded_tasks {
-        let access = match check_access(task.id, team_id, &pool) {
-            Ok(()) => true,
-            Err(_) => false,
-        };
+        let access = check_access(task.id, team_id, &pool).is_ok();
 
         let solved = check_solved(task.id, team_id, &pool)?;
 
@@ -264,15 +237,4 @@ pub fn load_map(team_id: i32, pool: &Pool) -> Result<Vec<TaskShortInfo>, AppErro
     }
 
     Ok(short_tasks)
-}
-
-pub fn init_game((start, end): (NaiveDateTime, NaiveDateTime), pool: &Pool) {
-    use crate::models::schema::game::dsl::*;
-
-    let conn = &pool.get().unwrap();
-
-    diesel::insert_into(game)
-        .values((&start_game.eq(start), &end_game.eq(end)))
-        .execute(conn)
-        .map_err(|err| panic!("Error while initializing game! Error: {}", err.to_string()));
 }
