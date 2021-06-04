@@ -23,8 +23,8 @@ pub fn logger_init(config: &Config) {
                 .add_filter_allow_str("rptime")
                 .build(),
             simplelog::TerminalMode::Mixed,
-        )
-        .unwrap(),
+            simplelog::ColorChoice::Auto,
+        ),
         simplelog::WriteLogger::new(
             config.log.file,
             simplelog::ConfigBuilder::new()

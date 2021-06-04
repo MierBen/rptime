@@ -1,9 +1,10 @@
 use clap::{crate_authors, crate_version, App};
 use failure::Fallible;
 use log::info;
-use rptime_backend::{logger_init, Config, Server};
+use rptime_backend::{logger_init, server, Config};
 
-fn main() -> Fallible<()> {
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     let matches = App::new("rptime-backend")
         .version(crate_version!())
         .author(crate_authors!())
@@ -13,17 +14,14 @@ fn main() -> Fallible<()> {
 
     let config_file = matches.value_of("config").unwrap_or("Config.toml");
 
-    let config = Config::from_file(config_file)?;
+    let config = Config::from_file(config_file).unwrap();
 
     logger_init(&config);
-
-    let server = Server::from_config(&config)?;
 
     info!(
         "Starting server from config path {} for url {}",
         config_file, config.server.url
     );
-    server.run()?;
 
-    Ok(())
+    server(config).await
 }

@@ -4,48 +4,41 @@ use crate::{
     utils::{AppData, AuthError},
 };
 use actix_identity::Identity;
-use actix_web::{web, Error, HttpResponse, ResponseError};
-use futures::{future::ok as fut_ok, Future};
+use actix_web::{web, Error, HttpResponse, Responder, ResponseError};
 
-pub fn register(
+pub async fn register(
     data: web::Json<Register>,
-    app: web::Data<AppData>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+    pool: web::Data<AppData>,
+) -> Result<HttpResponse, Error> {
     debug!(
         "Got team_name: {}; email: {}; country: {}",
         data.team_name, data.email, data.country
     );
 
-    web::block(move || register_query(data.into_inner(), &app.pool))
-        .from_err::<AuthError>()
-        .then(|res| match res {
-            Ok(team) => Ok(HttpResponse::Ok().json(team)),
-            Err(err) => Ok(err.error_response()),
-        })
+    let team = web::block(move || register_query(data.into_inner(), &pool.into_inner().pool))
+        .await
+        .map_err(|err| err.error_response())?;
+    Ok(HttpResponse::Ok().json(team))
 }
 
-pub fn login(
+pub async fn login(
     data: web::Json<Login>,
     id: Identity,
     app: web::Data<AppData>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     debug!("Got token: {}", data.token);
 
-    web::block(move || login_query(data.into_inner(), &app.pool))
-        .from_err::<AuthError>()
-        .then(move |res| match res {
-            Ok(team) => {
-                let team_id = team.id.to_string().to_owned();
-                id.remember(team_id);
-                Ok(HttpResponse::Ok().json(team))
-            }
-            Err(err) => Ok(err.error_response()),
-        })
+    let team = web::block(move || login_query(data.into_inner(), &app.pool))
+        .await
+        .map_err(|err| err.error_response())?;
+    let team_id = team.id.to_string().to_owned();
+    id.remember(team_id);
+    Ok(HttpResponse::Ok().json(team))
 }
 
-pub fn logout(id: Identity) -> impl Future<Item = HttpResponse, Error = Error> {
+pub async fn logout(id: Identity) -> impl Responder {
     if let Some(_token) = id.identity() {
         id.forget();
     }
-    fut_ok(HttpResponse::Ok().finish())
+    HttpResponse::Ok().finish()
 }

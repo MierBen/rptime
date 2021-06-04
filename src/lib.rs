@@ -14,5 +14,5 @@ mod models;
 pub mod server;
 pub mod utils;
 
-pub use server::Server;
+pub use server::server;
 pub use utils::{logger_init, Config};
