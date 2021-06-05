@@ -49,7 +49,7 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
-        let identity = RequestIdentity::get_identity(&req).unwrap_or("".into());
+        let identity = RequestIdentity::get_identity(&req).unwrap_or_else(|| "".to_string());
         let is_logged = !identity.is_empty();
         let unauthorized = !is_logged && req.path() != "/api/v1/login";
 
@@ -66,7 +66,10 @@ where
         }
 
         let srv = self.service.call(req);
-        Box::pin(async move { srv.await })
+        Box::pin(async move {
+            let res = srv.await?;
+            Ok(res)
+        })
     }
 }
 
@@ -108,37 +111,42 @@ where
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
         let data = req.app_data::<AppData>().clone().unwrap();
-
+        let path = req.path();
         let now = chrono::Local::now().naive_local();
-
         let start_game = data.start_game;
         let end_game = data.end_game;
-        let srv = self.service.call(req);
 
-        if now < start_game && req.path() == "/api/v1/register" {
-            Box::pin(async move {
-                Ok(req.into_response(
-                    HttpResponse::BadRequest()
-                        .content_type("application/json")
-                        .json(ResponseJsonError {
-                            error: "Contest already running. You can't register".to_string(),
-                        })
-                        .into_body(),
-                ))
-            })
-        } else if now > end_game && req.path() == "/api/v1/register" {
-            Box::pin(async move {
-                Ok(req.into_response(
-                    HttpResponse::BadRequest()
-                        .content_type("application/json")
-                        .json(ResponseJsonError {
-                            error: "Contest already finished.".to_string(),
-                        })
-                        .into_body(),
-                ))
-            })
-        } else {
-            Box::pin(async move { srv.await })
+        match path {
+            "/api/v1/register" => {
+                if now < start_game || now >= end_game {
+                    let error = if now < start_game {
+                        "Contest already running. You can't register".to_string()
+                    } else {
+                        "Contest already finished.".to_string()
+                    };
+                    Box::pin(async move {
+                        Ok(req.into_response(
+                            HttpResponse::BadRequest()
+                                .content_type("application/json")
+                                .json(ResponseJsonError { error })
+                                .into_body(),
+                        ))
+                    })
+                } else {
+                    let srv = self.service.call(req);
+                    Box::pin(async move {
+                        let res = srv.await?;
+                        Ok(res)
+                    })
+                }
+            }
+            _ => {
+                let srv = self.service.call(req);
+                Box::pin(async move {
+                    let res = srv.await?;
+                    Ok(res)
+                })
+            }
         }
     }
 }

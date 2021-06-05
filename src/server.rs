@@ -8,7 +8,7 @@ use crate::{
     utils::{load_tasks_from_path, load_tasks_from_repo, AppData, Config},
 };
 use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_web::{guard, middleware, web, App, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use chrono::NaiveDateTime;
 use failure::Fallible;
 
@@ -53,7 +53,6 @@ pub async fn server(config: Config) -> std::io::Result<()> {
                     .secure(false),
             ))
             .wrap(middleware::Logger::default())
-            .wrap(guard::Header("content-type", "application/json"))
             .service(
                 web::scope("/api/v1/auth")
                     .service(
@@ -107,7 +106,7 @@ pub async fn server(config: Config) -> std::io::Result<()> {
                     .service(web::resource("/scoreboard").route(web::get().to(scoreboard))),
             )
     })
-    .bind(&config.server.url);
+    .bind(&config.server.url)?;
 
     server.run().await
 }

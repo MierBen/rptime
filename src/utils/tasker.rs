@@ -106,7 +106,7 @@ fn load_task(task_path: &PathBuf) -> Fallible<InsertTask> {
     }
     info!("Imported task: {} is ok", task.title_ru);
     let keys_reward = vec![1; 6]
-        .iter()
+        .into_iter()
         .enumerate()
         .map(|(i, _c)| {
             if let Some(p) = task.keys_reward.iter().position(|s| s[0] == i as i32) {
