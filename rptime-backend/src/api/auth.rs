@@ -1,11 +1,12 @@
 use crate::{
-    database::{login_query, register_query},
+    database::auth::{login_query, register_query},
     models::{Login, Register},
-    utils::{AppData, AuthError},
+    utils::{AppData},
 };
 use actix_identity::Identity;
-use actix_web::{web, Error, HttpResponse, Responder, ResponseError};
+use actix_web::{post, web, Error, HttpResponse, Responder, ResponseError};
 
+#[post("/register")]
 pub async fn register(
     data: web::Json<Register>,
     pool: web::Data<AppData>,
@@ -21,6 +22,7 @@ pub async fn register(
     Ok(HttpResponse::Ok().json(team))
 }
 
+#[post("/login")]
 pub async fn login(
     data: web::Json<Login>,
     id: Identity,
@@ -31,13 +33,14 @@ pub async fn login(
     let team = web::block(move || login_query(data.into_inner(), &app.pool))
         .await
         .map_err(|err| err.error_response())?;
-    let team_id = team.id.to_string().to_owned();
-    id.remember(team_id);
+    let team_id = team.id.to_string();
+    id.remember(&team_id);
     Ok(HttpResponse::Ok().json(team))
 }
 
+#[post("/logout")]
 pub async fn logout(id: Identity) -> impl Responder {
-    if let Some(_token) = id.identity() {
+    if let Some(_) = id.identity() {
         id.forget();
     }
     HttpResponse::Ok().finish()

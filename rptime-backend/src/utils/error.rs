@@ -1,4 +1,3 @@
-use actix_web::error::BlockingError;
 use actix_web::{error, HttpResponse};
 use failure::Fail;
 use serde::{Deserialize, Serialize};
@@ -34,7 +33,7 @@ impl Into<AuthError> for ServiceError {
     }
 }
 
-#[derive(Fail, Debug)]
+#[derive(Fail, Debug, Serialize, Deserialize)]
 pub enum AuthError {
     #[fail(display = "Invalid email format!")]
     InvalidEmail,
@@ -84,20 +83,7 @@ impl error::ResponseError for AuthError {
     }
 }
 
-impl From<BlockingError<AuthError>> for AuthError {
-    fn from(e: BlockingError<AuthError>) -> Self {
-        error!("{}", e);
-        match e {
-            BlockingError::Canceled => ServiceError::Actix {
-                cause: e.to_string(),
-            }
-            .into(),
-            BlockingError::Error(ae) => ae,
-        }
-    }
-}
-
-#[derive(Fail, Debug)]
+#[derive(Fail, Debug, Serialize, Deserialize)]
 pub enum AppError {
     #[fail(display = "Game not started yet")]
     GameNotStarted,
@@ -151,19 +137,6 @@ impl error::ResponseError for AppError {
                 .json(ResponseJsonError {
                     error: "Task doesn't open yet!".to_string(),
                 }),
-        }
-    }
-}
-
-impl From<BlockingError<AppError>> for AppError {
-    fn from(e: BlockingError<AppError>) -> Self {
-        error!("{}", e);
-        match e {
-            BlockingError::Canceled => ServiceError::Actix {
-                cause: e.to_string(),
-            }
-            .into(),
-            BlockingError::Error(ae) => ae,
         }
     }
 }

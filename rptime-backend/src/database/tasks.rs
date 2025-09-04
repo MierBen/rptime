@@ -1,16 +1,7 @@
-use diesel::{
-    r2d2::{self, ConnectionManager},
-    PgConnection, RunQueryDsl,
-};
-
-pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-mod auth;
-mod game;
-
-use crate::{models::InsertTask, utils::AppError};
-pub use auth::*;
-pub use game::*;
+use diesel::RunQueryDsl;
+use crate::database::Pool;
+use crate::models::InsertTask;
+use crate::utils::AppError;
 
 pub fn import_tasks(tasks: Vec<InsertTask>, pool: &Pool) -> Result<usize, AppError> {
     use crate::models::schema::tasks;
@@ -23,9 +14,4 @@ pub fn import_tasks(tasks: Vec<InsertTask>, pool: &Pool) -> Result<usize, AppErr
         .map_err(|err| AppError::ServiceError {
             cause: format!("Error from import_task() - {:?}", err),
         })
-}
-
-pub fn init_db(database_url: String) -> Pool {
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    Pool::builder().build(manager).unwrap()
 }

@@ -33,7 +33,8 @@ fn check_access(task_id: i32, team_id: i32, pool: &Pool) -> Result<(), AppError>
         .first(conn)
         .map_err(|err| AppError::ServiceError {
             cause: err.to_string(),
-        })?;
+        })?
+    );
 
     for (i, &v) in team_keys.iter().enumerate() {
         if task_keys[i] > v {

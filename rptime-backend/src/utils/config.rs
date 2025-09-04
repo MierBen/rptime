@@ -1,7 +1,8 @@
+use std::fs::read_to_string;
+
 use failure::Fallible;
 use log::LevelFilter;
 use serde::Deserialize;
-use std::fs::read_to_string;
 use toml::from_str;
 
 #[derive(Clone, Deserialize)]

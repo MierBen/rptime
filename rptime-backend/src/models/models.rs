@@ -37,19 +37,6 @@ pub struct SetTeamGameInfo {
     pub points: i32,
 }
 
-#[derive(Deserialize)]
-pub struct Login {
-    pub token: String,
-}
-
-#[derive(Deserialize)]
-pub struct Register {
-    pub team_name: String,
-    pub email: String,
-    pub country: String,
-    pub university: String,
-}
-
 #[derive(Serialize, Deserialize, Queryable)]
 pub struct Task {
     pub id: i32,

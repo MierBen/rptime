@@ -1,53 +1,12 @@
-use crate::models::InsertTask;
-use failure::Fallible;
 use git2::Repository;
-use serde::{Deserialize, Serialize};
 use std::{
     fs::{read_dir, read_to_string},
     path::PathBuf,
 };
 use toml::from_str;
 
-#[derive(Deserialize, Default)]
-struct ImportTask {
-    title_ru: String,
-    title_en: Option<String>,
-    flag: String,
-    is_regexp: bool,
-    place: i32,
-    points: i32,
-    keys_reward: Vec<Vec<i32>>,
-    keys_condition: Vec<Vec<i32>>,
-    author: String,
-    character: i32,
-    tags: String,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Map {
-    pub places: Vec<Place>,
-    pub keys: Vec<Key>,
-    pub characters: Vec<Character>,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Place {
-    pub id: i32,
-    pub name: String,
-    pub coords: Vec<i32>,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Key {
-    pub id: i32,
-    pub name: String,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Character {
-    pub id: i32,
-    pub name: String,
-}
+use crate::models::InsertTask;
+use crate::models::tasks::{Map, ImportTask};
 
 pub fn load_tasks_from_repo(url: &str, save_path: &str) -> Fallible<(Vec<InsertTask>, PathBuf)> {
     let repo = Repository::clone(url, save_path)?;
@@ -91,7 +50,7 @@ fn load_task(task_path: &PathBuf) -> Fallible<InsertTask> {
             if path.ends_with("task.toml") {
                 task = from_str(&read_to_string(path)?)?;
                 if !task.is_regexp {
-                    task.flag = task.flag.escape_debug().to_string();
+                    task.flag = task.flag.to_string();
                 }
             } else if path.ends_with("desc_ru.html") {
                 desc_ru = read_to_string(path)?;
